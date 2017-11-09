@@ -111,7 +111,7 @@ export default class KeyboardAccessoryView extends Component {
   render() {
     return (
       <KeyboardTrackingView
-        style={styles.trackingToolbarContainer}
+        style={[styles.trackingToolbarContainer, {width: '100%'}]}
         onLayout={this.onContainerComponentHeightChanged}
         scrollBehavior={this.getIOSTrackingScrollBehavior()}
         revealKeyboardInteractive={this.props.revealKeyboardInteractive}
@@ -135,7 +135,6 @@ const styles = StyleSheet.create({
   trackingToolbarContainer: {
     ...Platform.select({
       ios: {
-        width: ScreenSize.width,
         position: 'absolute',
         bottom: 0,
         left: 0,
