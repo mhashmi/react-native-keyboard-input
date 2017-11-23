@@ -175,7 +175,8 @@ RCT_EXPORT_METHOD(presentCustomInputComponent:(nonnull NSNumber*)inputFieldTag p
         
         if ([inputField isKindOfClass:[RCTTextView class]])
         {
-            UITextView *textView = [inputField valueForKey:@"_textView"];
+            //UITextView *textView = [inputField valueForKey:@"_textView"];
+            UITextView *textView = nil;
             if (textView != nil)
             {
                 helperView.inputAccessoryView = textView.inputAccessoryView;
