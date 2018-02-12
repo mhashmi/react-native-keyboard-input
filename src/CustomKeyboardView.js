@@ -18,8 +18,8 @@ export default class CustomKeyboardView extends Component {
     onItemSelected: PropTypes.func,
   };
   static defaultProps = {
-    initialProps: {}
-  }
+    initialProps: {},
+  };
 
   constructor(props) {
     super(props);

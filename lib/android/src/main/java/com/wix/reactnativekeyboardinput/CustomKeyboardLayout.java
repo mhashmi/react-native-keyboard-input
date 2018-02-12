@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
 
 import com.facebook.react.ReactRootView;
 import com.facebook.react.bridge.Promise;
@@ -20,7 +21,7 @@ import static com.wix.reactnativekeyboardinput.utils.RuntimeUtils.runOnUIThread;
 import static com.wix.reactnativekeyboardinput.utils.ViewUtils.getWindow;
 
 public class CustomKeyboardLayout implements ReactSoftKeyboardMonitor.Listener, ReactScreenMonitor.Listener {
-
+    private boolean mFirstKeyboardShow = true;
     private final InputMethodManager mInputMethodManager;
     private final ReactSoftKeyboardMonitor mKeyboardMonitor;
     private WeakReference<CustomKeyboardRootViewShadow> mShadowNode = new WeakReference<>(null);
@@ -39,6 +40,13 @@ public class CustomKeyboardLayout implements ReactSoftKeyboardMonitor.Listener, 
             clearKeyboardOverlayMode();
         }
         hideCustomKeyboardContent();
+    }
+
+    @Override
+    public void onSoftKeyboardHidden() {
+        if (getShadowNodeHeight() == 0) {
+            mFirstKeyboardShow = true;
+        }
     }
 
     @Override
@@ -69,7 +77,8 @@ public class CustomKeyboardLayout implements ReactSoftKeyboardMonitor.Listener, 
         runOnUIThread(new Runnable() {
             @Override
             public void run() {
-                if (getCurrentActivity().getCurrentFocus() != null) {
+                final View focusedView = getCurrentActivity().getCurrentFocus();
+                if (focusedView instanceof EditText) {
                     showSoftKeyboard();
                 } else {
                     hideCustomKeyboardContent();
@@ -81,46 +90,67 @@ public class CustomKeyboardLayout implements ReactSoftKeyboardMonitor.Listener, 
     }
 
     public void clearFocusedView() {
-        final View focusedView = getCurrentActivity().getCurrentFocus();
-        if (focusedView != null) {
-            runOnUIThread(new Runnable() {
-                @Override
-                public void run() {
+        runOnUIThread(new Runnable() {
+            @Override
+            public void run() {
+                final View focusedView = getCurrentActivity().getCurrentFocus();
+                if (focusedView != null) {
                     focusedView.clearFocus();
-                    sendCustomKeyboardResignedEvent();
                 }
-            });
-        }
+            }
+        });
     }
 
     private void showCustomKeyboardContent() {
-        dispatchUIUpdates(new Runnable() {
-            @Override
-            public void run() {
-                final CustomKeyboardRootViewShadow shadowNode = mShadowNode.get();
-                if (shadowNode != null) {
-                    shadowNode.setHeight(getHeightForCustomContent());
-                }
-            }
-        });
+        setCustomKeyboardHeight(getHeightForCustomContent());
     }
 
     private void hideCustomKeyboardContent() {
-        dispatchUIUpdates(new Runnable() {
-            @Override
-            public void run() {
-                final CustomKeyboardRootViewShadow shadowNode = mShadowNode.get();
-                if (shadowNode != null) {
-                    shadowNode.setHeight(0);
-                }
-            }
-        });
+        setCustomKeyboardHeight(0);
         runOnUIThread(new Runnable() {
             @Override
             public void run() {
                 sendCustomKeyboardResignedEvent();
             }
         });
+    }
+
+    private void syncCustomKeyboardHeightAfterUIUpdate(final int height) {
+        dispatchUIUpdates(new Runnable() {
+            @Override
+            public void run() {
+                setShadowNodeHeight(height);
+            }
+        });
+    }
+
+    private void setCustomKeyboardHeight(int height) {
+        try {
+            if (mFirstKeyboardShow) {
+                mFirstKeyboardShow = false;
+                syncCustomKeyboardHeightAfterUIUpdate(height);
+            } else {
+                setShadowNodeHeight(height);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void setShadowNodeHeight(int height) {
+        final CustomKeyboardRootViewShadow shadowNode = mShadowNode.get();
+        if (shadowNode != null) {
+            shadowNode.setHeight(height);
+        }
+    }
+
+    private float getShadowNodeHeight() {
+        float height = 0;
+        final CustomKeyboardRootViewShadow shadowNode = mShadowNode.get();
+        if (shadowNode != null) {
+            height = shadowNode.getHeight();
+        }
+        return height;
     }
 
     private void showSoftKeyboard() {
